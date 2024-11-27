@@ -1,13 +1,14 @@
 from mmengine.registry import DATASETS as MMENGINE_DATASETS
-from mmengine.registry import Registry
 from mmengine.registry import TRANSFORMS as MMENGINE_TRANSFORMS
+from mmengine.registry import MODELS as MMENGINE_MODELS
+from mmengine.registry import Registry
 
 
 __all__ = ['DATASETS']
 
-#######################################################################
-#                        mmpretrain.datasets                          #
-#######################################################################
+##################################################################
+#                        mmvpr.datasets                          #
+##################################################################
 
 # Datasets like `ImageNet` and `CIFAR10`.
 DATASETS = Registry(
@@ -19,5 +20,16 @@ DATASETS = Registry(
 TRANSFORMS = Registry(
     'transform',
     parent=MMENGINE_TRANSFORMS,
-    locations=['mmpretrain.datasets'],
+    locations=['mmvpr.datasets'],
+)
+
+##################################################################
+#                         mmvpr.models                           #
+##################################################################
+
+# Neural network modules inheriting `nn.Module`.
+MODELS = Registry(
+    'model',
+    parent=MMENGINE_MODELS,
+    locations=['mmvpr.models'],
 )
