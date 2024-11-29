@@ -1,6 +1,7 @@
 from mmengine.registry import DATASETS as MMENGINE_DATASETS
 from mmengine.registry import TRANSFORMS as MMENGINE_TRANSFORMS
 from mmengine.registry import MODELS as MMENGINE_MODELS
+from mmengine.registry import METRICS as MMENGINE_METRICS
 from mmengine.registry import Registry
 
 
@@ -32,4 +33,20 @@ MODELS = Registry(
     'model',
     parent=MMENGINE_MODELS,
     locations=['mmvpr.models'],
+)
+# Batch augmentations like `Mixup` and `CutMix`.
+BATCH_AUGMENTS = Registry(
+    'batch augment',
+    locations=['mmvpr.models'],
+)
+
+##################################################################
+#                       mmvpr.evaluation                         #
+##################################################################
+
+# Metrics to evaluate the model prediction results.
+METRICS = Registry(
+    'metric',
+    parent=MMENGINE_METRICS,
+    locations=['mmvpr.evaluation'],
 )
