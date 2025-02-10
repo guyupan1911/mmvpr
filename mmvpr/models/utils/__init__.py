@@ -1,10 +1,10 @@
-from .data_preprocessor import (ClsDataPreprocessor,
+from .data_preprocessor import (ClsDataPreprocessor, VprDataPreprocessor,
                                 MultiModalDataPreprocessor,
                                 SelfSupDataPreprocessor,
                                 TwoNormDataPreprocessor, VideoDataPreprocessor)
 
 __all__ = [
-    'ClsDataPreprocessor',
+    'ClsDataPreprocessor', 'VprDataPreprocessor',
     'MultiModalDataPreprocessor',
     'SelfSupDataPreprocessor',
     'TwoNormDataPreprocessor',

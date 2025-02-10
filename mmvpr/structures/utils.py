@@ -17,7 +17,7 @@ else:
         return outs
 
 
-LABEL_TYPE = Union[torch.Tensor, np.ndarray, Sequence, int]
+LABEL_TYPE = Union[torch.Tensor, np.ndarray, Sequence, int, np.int64]
 SCORE_TYPE = Union[torch.Tensor, np.ndarray, Sequence]
 
 
@@ -42,7 +42,7 @@ def format_label(value: LABEL_TYPE) -> torch.Tensor:
         value = torch.from_numpy(value).to(torch.long)
     elif isinstance(value, Sequence) and not is_str(value):
         value = torch.tensor(value).to(torch.long)
-    elif isinstance(value, int):
+    elif isinstance(value, (int, np.int64)):
         value = torch.LongTensor([value])
     elif not isinstance(value, torch.Tensor):
         raise TypeError(f'Type {type(value)} is not an available label type.')

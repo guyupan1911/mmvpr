@@ -77,6 +77,15 @@ class DataSample(BaseDataElement):
         [1, 2, 3]
     """
 
+    def set_place_id(self, value: LABEL_TYPE) -> 'DataSample':
+        """Set ``place_id``."""
+        self.set_field(format_label(value), 'place_id', dtype=torch.Tensor)
+        return self
+
+    def set_descriptor(self, value: LABEL_TYPE) -> 'DataSample':
+        """Set ''descriptor''."""
+        self.set_field(format_label(value), 'descriptor', dtype=torch.Tensor)
+
     def set_gt_label(self, value: LABEL_TYPE) -> 'DataSample':
         """Set ``gt_label``."""
         self.set_field(format_label(value), 'gt_label', dtype=torch.Tensor)

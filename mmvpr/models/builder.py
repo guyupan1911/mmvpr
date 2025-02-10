@@ -5,6 +5,7 @@ NECKS = MODELS
 HEADS = MODELS
 LOSSES = MODELS
 CLASSIFIERS = MODELS
+AGGREGATORS = MODELS
 
 def build_backbone(cfg):
     """Build backbone"""
@@ -17,6 +18,10 @@ def build_neck(cfg):
 def build_head(cfg):
     """BUILD head"""
     return HEADS.build(cfg)
+
+def build_aggregator(cfg):
+    """Build aggregator"""
+    return AGGREGATORS.build(cfg)
 
 def build_loss(cfg):
     """Build loss."""

@@ -4,6 +4,11 @@ from typing import List, Optional, Sequence, Union
 
 import mmengine
 import numpy as np
+import faiss
+import faiss.contrib.torch_utils
+import matplotlib.pyplot as plt
+from PIL import Image
+
 import torch
 import torch.nn.functional as F
 from mmengine.evaluator import BaseMetric
@@ -774,3 +779,135 @@ class ConfusionMatrix(BaseMetric):
         if show:
             plt.show()
         return fig
+
+@METRICS.register_module()
+class VprMetric(BaseMetric):
+
+    default_prefix: Optional[str] = 'recall'
+
+    def __init__(self,
+                 topk: Union[int, Sequence[int]] = (1, ),
+                 collect_device: str = 'cpu',
+                 prefix: Optional[str] = None) -> None:
+        super().__init__(collect_device=collect_device, prefix=prefix)
+
+        if isinstance(topk, int):
+            self.topk = (topk, )
+        else:
+            self.topk = tuple(topk)
+
+    def process(self, data_batch, data_samples: Sequence[dict]):
+        """Process one batch of data samples.
+
+        The processed results should be stored in ``self.results``, which will
+        be used to computed the metrics when all batches have been processed.
+
+        Args:
+            data_batch: A batch of data from the dataloader.
+            data_samples (Sequence[dict]): A batch of outputs from the model.
+        """
+
+        for data_sample in data_samples:
+            result = dict()
+            
+            result['sample_idx'] = data_sample['sample_idx']
+            result['img_path'] = data_sample['img_path']
+            result['descriptor'] = data_sample['descriptor']
+            if 'gt' in data_sample:
+                result['gt'] = data_sample['gt']
+            # Save the result to `self.results`.
+            self.results.append(result)
+
+    def compute_metrics(self, results: List):
+        """Compute the metrics from processed results.
+
+        Args:
+            results (dict): The processed results of each batch.
+
+        Returns:
+            Dict: The computed metrics. The keys are the names of the metrics,
+            and the values are corresponding results.
+        """
+        # NOTICE: don't access `self.results` from the method.
+        metrics = {}
+
+        # concat
+        descriptors = torch.stack([res['descriptor'] for res in results])
+        ground_truth = [res['gt'] for res in results if 'gt' in res]
+        sample_indices = [res['sample_idx'] for res in results]
+        img_paths = [res['img_path'] for res in results]
+
+        try:
+            acc = self.calculate(descriptors, ground_truth, img_paths, self.topk)
+        except ValueError as e:
+            # If the topk is invalid.
+            raise ValueError(
+                str(e) + ' Please check the `val_evaluator` and '
+                '`test_evaluator` fields in your config file.')
+
+        for i, k in enumerate(self.topk):
+            name = f'recall@{k}'
+            metrics[name] = acc[i].item()
+
+        return metrics
+
+    @staticmethod
+    def calculate(
+        descriptors: Union[torch.Tensor, np.ndarray, Sequence],
+        ground_truth: Union[torch.Tensor, np.ndarray, Sequence],
+        img_paths: Union[torch.Tensor, np.ndarray, Sequence],
+        topk: Sequence[int] = (1, ),
+    ) -> Union[torch.Tensor, List[List[torch.Tensor]]]:
+        """Calculate the accuracy.
+
+        Args:
+            pred (torch.Tensor | np.ndarray | Sequence): The prediction
+                results. It can be labels (N, ), or scores of every
+                class (N, C).
+            target (torch.Tensor | np.ndarray | Sequence): The target of
+                each prediction with shape (N, ).
+            thrs (Sequence[float | None]): Predictions with scores under
+                the thresholds are considered negative. It's only used
+                when ``pred`` is scores. None means no thresholds.
+                Defaults to (0., ).
+            thrs (Sequence[float]): Predictions with scores under
+                the thresholds are considered negative. It's only used
+                when ``pred`` is scores. Defaults to (0., ).
+
+        Returns:
+            torch.Tensor | List[List[torch.Tensor]]: Accuracy.
+
+            - torch.Tensor: If the ``pred`` is a sequence of label instead of
+              score (number of dimensions is 1). Only return a top-1 accuracy
+              tensor, and ignore the argument ``topk` and ``thrs``.
+            - List[List[torch.Tensor]]: If the ``pred`` is a sequence of score
+              (number of dimensions is 2). Return the accuracy on each ``topk``
+              and ``thrs``. And the first dim is ``topk``, the second dim is
+              ``thrs``.
+        """
+
+        num_queries = len(ground_truth)
+        num_references = descriptors.shape[0] - num_queries
+
+        embed_size = descriptors.shape[1]
+        faiss_index = faiss.IndexFlatL2(embed_size)
+
+        # add references
+        faiss_index.add(descriptors[:num_references])
+
+        # search for queries in the index
+        _, predictions = faiss_index.search(descriptors[num_references:], max(topk))
+     
+        # start calculating recall_@k
+        correct_at_k = np.zeros(len(topk))
+        for q_idx, pred in enumerate(predictions):
+            for i, n in enumerate(topk):
+                if np.any(np.in1d(pred[:n], ground_truth[q_idx])):
+                    correct_at_k[i:] += 1
+                    break
+        
+        correct_at_k = correct_at_k / len(predictions)
+
+        results = [v for v in correct_at_k]
+
+        return results

@@ -1,1 +1,1 @@
-# visual place recognition based on openmmlab
+# visual place recognition openmmlab project

@@ -9,7 +9,7 @@ from .auto_augment import (AutoAugment, AutoContrast, BaseAugTransform,
                            RandAugment, Rotate, Sharpness, Shear, Solarize,
                            SolarizeAdd, Translate)
 from .formatting import (Collect, NumpyToPIL, PackInputs, PackMultiTaskInputs,
-                         PILToNumpy, Transpose)
+                         PILToNumpy, Transpose, PackVPRInputs)
 from .processing import (Albumentations, BEiTMaskGenerator, CleanCaption,
                          ColorJitter, EfficientNetCenterCrop,
                          EfficientNetRandomCrop, Lighting,
@@ -19,13 +19,14 @@ from .processing import (Albumentations, BEiTMaskGenerator, CleanCaption,
                          RandomTranslatePad, ResizeEdge, SimMIMMaskGenerator)
 from .utils import get_transform_idx, remove_transform
 from .wrappers import ApplyToList, MultiView
+from .loading import LoadImagesFromFile
 
 for t in (CenterCrop, LoadImageFromFile, Normalize, RandomFlip,
           RandomGrayscale, RandomResize, Resize):
     TRANSFORMS.register_module(module=t)
 
 __all__ = [
-    'NumpyToPIL', 'PILToNumpy', 'Transpose', 'Collect', 'RandomCrop',
+    'NumpyToPIL', 'PILToNumpy', 'Transpose', 'PackVPRInputs', 'Collect', 'RandomCrop',
     'RandomResizedCrop', 'Shear', 'Translate', 'Rotate', 'Invert',
     'ColorTransform', 'Solarize', 'Posterize', 'AutoContrast', 'Equalize',
     'Contrast', 'Brightness', 'Sharpness', 'AutoAugment', 'SolarizeAdd',
@@ -37,5 +38,5 @@ __all__ = [
     'RandomFlip', 'RandomGrayscale', 'RandomResize', 'Resize', 'MultiView',
     'ApplyToList', 'CleanCaption', 'RandomTranslatePad',
     'RandomResizedCropAndInterpolationWithTwoPic', 'get_transform_idx',
-    'remove_transform', 'MAERandomResizedCrop'
+    'remove_transform', 'MAERandomResizedCrop', 'LoadImagesFromFile'
 ]
