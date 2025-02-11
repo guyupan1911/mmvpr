@@ -25,8 +25,9 @@ train_dataloader = dict(
         type='GSVCities',
         dataset_path='/home/yuxuanhuang/projects/OpenVPRLab/data/train/gsv-cities-light',
         img_per_place = 4,
+        random_sample_from_each_place=True,
         pipeline =train_pipeline),
-    sampler=dict(type='DefaultSampler', shuffle=True)
+    sampler=dict(type='DefaultSampler', shuffle=False)
 )
 
 test_pipeline = [
@@ -74,8 +75,15 @@ optim_wrapper=dict(
     optimizer=dict(type='AdamW', lr=0.0002, weight_decay=0.001))
 
 # learning policy
-param_scheduler = dict(
-    type='MultiStepLR', by_epoch=True, milestones=[30, 60, 90], gamma=0.1)
+param_scheduler = [
+    dict(type='LinearLR',
+         start_factor=0.001,
+         by_epoch=False,  # Updated by iterations
+         begin=0,
+         end=1500),  # Warm up for the first 1500 iterations
+    dict(
+        type='MultiStepLR', by_epoch=True, milestones=[10, 20, 30], gamma=0.1)
+] 
 
 # train, val, test setting
 train_cfg = dict(by_epoch=True, max_epochs=100, val_interval=1)

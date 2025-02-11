@@ -186,9 +186,6 @@ def main():
         # if 'runner_type' is set in the cfg
         runner = RUNNERS.build(cfg)
 
-    runner.model.init_weights()
-    runner.test()
-
     # start training
     runner.train()
 
