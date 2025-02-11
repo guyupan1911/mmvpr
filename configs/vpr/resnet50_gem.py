@@ -65,8 +65,11 @@ model = dict(
 
 
 # optimizer
-optim_wrapper = dict(
-    optimizer=dict(type='SGD', lr=0.1, momentum=0.9, weight_decay=0.0001))
+optim_wrapper=dict(
+    type='AmpOptimWrapper',
+    # 如果你想要使用 BF16，请取消下面一行的代码注释
+    dtype='float16',  # 可用值： ('float16', 'bfloat16', None)
+    optimizer=dict(type='SGD', lr=0.001, momentum=0.9))
 
 # learning policy
 param_scheduler = dict(
