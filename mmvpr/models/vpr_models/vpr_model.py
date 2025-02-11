@@ -70,7 +70,6 @@ class VisualPlaceRecognizer(BaseModel):
                 inputs: torch.Tensor,
                 data_samples: Optional[List[DataSample]] = None,
                 mode: str = 'tensor'):
-    
         if mode == 'tensor':
             feats = self.extract_feat(inputs)
             return self.head(feats)
@@ -81,15 +80,17 @@ class VisualPlaceRecognizer(BaseModel):
         else:
             raise RuntimeError(f'Invalid mode: "{mode}".')
 
+
     def extract_feat(self, inputs):
         x = self.backbone(inputs)
         return x
 
+
     def loss(self, inputs: torch.Tensor,
              data_samples: List[DataSample]) -> dict:
-        
         feats = self.extract_feat(inputs)
         return self.head.loss(feats, data_samples)
+
     
     def predict(self,
                 inputs: torch.Tensor,

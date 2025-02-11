@@ -12,7 +12,7 @@ data_preprocessor = dict(
 
 train_pipeline = [
     dict(type='LoadImagesFromFile'),
-    dict(type='Resize', scale=(320,320)),
+    dict(type='BatchResize', scale=(320,320)),
     # dict(type='RandomResizedCrop', scale=224),
     # dict(type='RandomFlip', prob=0.5, direction='horizontal'),
     dict(type='PackVPRInputs'),
@@ -31,7 +31,7 @@ train_dataloader = dict(
 
 test_pipeline = [
     dict(type='LoadImageFromFile'),
-    dict(type='Resize', scale=(480,480)),
+    dict(type='Resize', scale=(320,320)),
     dict(type='PackInputs'),
 ]
 
@@ -39,8 +39,8 @@ test_dataloader = dict(
     batch_size=256,
     num_workers=16,
     dataset=dict(
-        type='PittsburghDataset',
-        dataset_path='/home/yuxuanhuang/projects/OpenVPRLab/data/val/pitts30k-val',
+        type='MapillarySLSDataset',
+        dataset_path='/home/yuxuanhuang/projects/OpenVPRLab/data/val/msls-val/',
         pipeline=test_pipeline),
     sampler=dict(type='DefaultSampler', shuffle=False)
 )
@@ -52,14 +52,16 @@ model = dict(
     backbone=dict(
         type='ResNet',
         depth=50,
-        num_stages=4,
-        frozen_stages=3,
-        out_indices=(3, ),
+        num_stages=3,
+        frozen_stages=2,
+        out_indices=(2, ),
+        strides=(1, 2, 2),
+        dilations=(1, 1, 1),
         style='pytorch',
         init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet50')),
     head=dict(
         type='VPRHead',
-        aggregator=dict(type='AVGPool'),
+        aggregator=dict(type='MixVPR'),
         loss=dict(type='VPRLoss'))
 )
 
@@ -69,7 +71,7 @@ optim_wrapper=dict(
     type='AmpOptimWrapper',
     # 如果你想要使用 BF16，请取消下面一行的代码注释
     dtype='float16',  # 可用值： ('float16', 'bfloat16', None)
-    optimizer=dict(type='SGD', lr=0.001, momentum=0.9))
+    optimizer=dict(type='AdamW', lr=0.0002, weight_decay=0.001))
 
 # learning policy
 param_scheduler = dict(

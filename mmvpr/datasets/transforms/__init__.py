@@ -16,7 +16,7 @@ from .processing import (Albumentations, BEiTMaskGenerator, CleanCaption,
                          MAERandomResizedCrop, RandomCrop, RandomErasing,
                          RandomResizedCrop,
                          RandomResizedCropAndInterpolationWithTwoPic,
-                         RandomTranslatePad, ResizeEdge, SimMIMMaskGenerator)
+                         RandomTranslatePad, ResizeEdge, SimMIMMaskGenerator, BatchResize)
 from .utils import get_transform_idx, remove_transform
 from .wrappers import ApplyToList, MultiView
 from .loading import LoadImagesFromFile
@@ -34,7 +34,7 @@ __all__ = [
     'PackInputs', 'Albumentations', 'EfficientNetRandomCrop',
     'EfficientNetCenterCrop', 'ResizeEdge', 'BaseAugTransform',
     'PackMultiTaskInputs', 'GaussianBlur', 'BEiTMaskGenerator',
-    'SimMIMMaskGenerator', 'CenterCrop', 'LoadImageFromFile', 'Normalize',
+    'SimMIMMaskGenerator', 'BatchResize', 'CenterCrop', 'LoadImageFromFile', 'Normalize',
     'RandomFlip', 'RandomGrayscale', 'RandomResize', 'Resize', 'MultiView',
     'ApplyToList', 'CleanCaption', 'RandomTranslatePad',
     'RandomResizedCropAndInterpolationWithTwoPic', 'get_transform_idx',

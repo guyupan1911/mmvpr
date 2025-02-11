@@ -218,4 +218,86 @@ class PittsburghDataset(BaseDataset):
             data_list.append(info)
 
         return data_list
-    
+
+
+@DATASETS.register_module()
+class MapillarySLSDataset(BaseDataset):
+    """
+    MapillarySLS validation dataset for visual place recognition.
+
+    Args:
+        dataset_path (str): Directory containing the dataset. If None, the path in config/data/config.yaml will be used.
+        input_transform (callable, optional): Optional transform to be applied on each image.
+        
+    Reference:
+        @inProceedings{Warburg_CVPR_2020,
+        author    = {Warburg, Frederik and Hauberg, Soren and Lopez-Antequera, Manuel and Gargallo, Pau and Kuang, Yubin and Civera, Javier},
+        title     = {Mapillary Street-Level Sequences: A Dataset for Lifelong Place Recognition},
+        booktitle = {Computer Vision and Pattern Recognition (CVPR)},
+        year      = {2020},
+        month     = {June}
+        }
+    """
+
+    def __init__(
+        self,
+        dataset_path: Optional [str] = None,
+        pipeline: Sequence = (),
+        lazy_init: bool = False
+    ): 
+        dataset_path = Path(dataset_path)
+        if not dataset_path.is_dir():
+            raise FileNotFoundError(f"The directory {dataset_path} does not exist. Please check the path.")
+
+        # make sure the path contains folders `cph` and `sf` and  the 
+        # files `msls_val_dbImages.npy`, `msls_val_qImages.npy`, 
+        # and `msls_val_gt_25m.npy`
+        if not (dataset_path / "cph").is_dir() or not (dataset_path / "sf").is_dir():
+            raise FileNotFoundError(f"The directory {dataset_path} does not contain the folders `cph` and `sf`. Please check the path.")
+        if not (dataset_path / "msls_val_dbImages.npy").is_file():
+            raise FileNotFoundError(f"The file 'msls_val_dbImages.npy' does not exist in {dataset_path}. Please check the path.")
+        if not (dataset_path / "msls_val_qImages.npy").is_file():
+            raise FileNotFoundError(f"The file 'msls_val_qImages.npy' does not exist in {dataset_path}. Please check the path.")
+        if not (dataset_path / "msls_val_gt_25m.npy").is_file():
+            raise FileNotFoundError(f"The file 'msls_val_gt_25m.npy' does not exist in {dataset_path}. Please check the path.")
+        
+        self.dataset_name = "msls-val"
+        self.dataset_path = dataset_path
+        # Load image names and ground truth data
+        self.dbImages = np.load(dataset_path / "msls_val_dbImages.npy")
+        self.qImages = np.load(dataset_path / "msls_val_qImages.npy")
+        self.ground_truth = np.load(dataset_path / "msls_val_gt_25m.npy", allow_pickle=True)
+
+        # Combine reference and query images
+        self.image_paths = np.concatenate((self.dbImages, self.qImages))
+        self.num_references = len(self.dbImages)
+        self.num_queries = len(self.qImages)
+
+        transforms = []
+        for transform in pipeline:
+            if isinstance(transform, dict):
+                transforms.append(TRANSFORMS.build(transform))
+            else:
+                transforms.append(transform)
+
+        super().__init__(
+            pipeline=transforms,
+        )
+
+        # Full initialize the dataset.
+        if not lazy_init:
+            self.full_init()
+
+
+    def load_data_list(self):
+        """Load image paths and place_id."""
+        data_list = []
+        for index, img_path in enumerate(self.image_paths):
+            info = {'img_path': (self.dataset_path / img_path),
+                    'num_references': self.num_references,
+                    'num_queries': self.num_queries}
+            if index - self.num_references >= 0:
+                info.update({'gt': self.ground_truth[index - self.num_references]})        
+            data_list.append(info)
+
+        return data_list
