@@ -187,7 +187,8 @@ def main():
         runner = RUNNERS.build(cfg)
 
     # start training
-    runner.train()
+    # runner.train()
+    runner.test()
 
 
 
