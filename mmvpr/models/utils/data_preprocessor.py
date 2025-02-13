@@ -5,6 +5,8 @@ from typing import List, Optional, Sequence, Tuple, Union
 
 import torch
 import torch.nn.functional as F
+from torchvision.transforms import v2  as T2
+
 from mmengine.model import (BaseDataPreprocessor, ImgDataPreprocessor,
                             stack_batch)
 
@@ -275,6 +277,8 @@ class VprDataPreprocessor(BaseDataPreprocessor):
         else:
             self.batch_augments = None
 
+        self.augment = T2.RandAugment(num_ops=3, magnitude=15, interpolation=T2.InterpolationMode.BILINEAR)
+
     def forward(self, data: dict, training: bool = False) -> dict:
         """Perform normalization, padding, bgr2rgb conversion and batch
         augmentation based on ``BaseDataPreprocessor``.
@@ -299,6 +303,9 @@ class VprDataPreprocessor(BaseDataPreprocessor):
             # ------ To RGB ------
             if self.to_rgb and inputs.size(1) == 3:
                 inputs = inputs.flip(1)
+
+            if training:
+                inputs = self.augment(inputs)
 
             # -- Normalization ---
             inputs = inputs.float()
@@ -326,6 +333,10 @@ class VprDataPreprocessor(BaseDataPreprocessor):
                 # ------ To RGB ------
                 if self.to_rgb and input_.size(0) == 3:
                     input_ = input_.flip(0)
+
+
+                if training:
+                    inputs = self.augment(inputs)
 
                 # -- Normalization ---
                 input_ = input_.float()
