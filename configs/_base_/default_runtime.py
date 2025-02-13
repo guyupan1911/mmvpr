@@ -20,6 +20,9 @@ default_hooks = dict(
 
     # validation results visualization, set True to enable it.
     visualization=dict(type='VisualizationHook', enable=False),
+
+    # reload dataset before each epoch
+    reload_dataset=dict(type='ReloadDatasetHook'),
 )
 
 # configure environment

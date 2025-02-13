@@ -17,6 +17,7 @@ class GSVCities(BaseDataset):
                  random_sample_from_each_place=True,
                  hard_mining=False,
                  pipeline: Sequence = (),
+                 serialize_data: bool = True,
                  lazy_init: bool = False
                  ):
         """
@@ -47,12 +48,6 @@ class GSVCities(BaseDataset):
         self.img_per_place = img_per_place
         self.random_sample_from_each_place = random_sample_from_each_place
         self.hard_mining = hard_mining
-        # generate the dataframe contraining images metadata
-        self.dataframe = self.__getdataframes()
-        
-        # get all unique place ids
-        self.places_ids = pd.unique(self.dataframe.index)
-        self.total_nb_images = len(self.dataframe)
 
         transforms = []
         for transform in pipeline:
@@ -63,6 +58,7 @@ class GSVCities(BaseDataset):
 
         super().__init__(
             pipeline=transforms,
+            serialize_data=serialize_data,
         )
 
         # Full initialize the dataset.
@@ -88,9 +84,18 @@ class GSVCities(BaseDataset):
         df = pd.concat(dataframes)
         # keep only places depicted by at least img_per_place images
         df = df[df.groupby('place_id')['place_id'].transform('size') >= self.img_per_place]
-        return df.set_index('place_id')
+
+        # generate the dataframe contraining images metadata
+        self.dataframe = df.set_index('place_id')
+        
+        # get all unique place ids
+        self.places_ids = pd.unique(self.dataframe.index)
+        self.total_nb_images = len(self.dataframe)
+
 
     def load_data_list(self):
+        self.__getdataframes()
+        
         """Load image paths and place_id."""
         data_list = []
         for place_id in self.places_ids:

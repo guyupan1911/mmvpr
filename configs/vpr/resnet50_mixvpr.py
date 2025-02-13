@@ -26,8 +26,10 @@ train_dataloader = dict(
         dataset_path='/home/yuxuanhuang/projects/OpenVPRLab/data/train/gsv-cities-light',
         img_per_place = 4,
         random_sample_from_each_place=True,
-        pipeline =train_pipeline),
-    sampler=dict(type='DefaultSampler', shuffle=False)
+        pipeline=train_pipeline,
+        serialize_data=False),
+    sampler=dict(type='DefaultSampler', shuffle=False),
+    persistent_workers=False
 )
 
 test_pipeline = [
@@ -81,8 +83,8 @@ param_scheduler = [
          by_epoch=False,  # Updated by iterations
          begin=0,
          end=1500),  # Warm up for the first 1500 iterations
-    dict(
-        type='MultiStepLR', by_epoch=True, milestones=[10, 20, 30], gamma=0.1)
+    # dict(
+    #     type='MultiStepLR', by_epoch=True, milestones=[10, 20, 30], gamma=0.1)
 ] 
 
 # train, val, test setting
@@ -95,4 +97,4 @@ val_evaluator = test_evaluator
 
 # NOTE: `auto_scale_lr` is for automatically scaling LR,
 # based on the actual training batch size.
-auto_scale_lr = dict(base_batch_size=256)
+# auto_scale_lr = dict(base_batch_size=256)
