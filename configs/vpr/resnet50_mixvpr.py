@@ -48,6 +48,16 @@ test_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False)
 )
 
+# test_dataloader = dict(
+#     batch_size=256,
+#     num_workers=16,
+#     dataset=dict(
+#         type='MapillarySLSDataset',
+#         dataset_path='/home/yuxuanhuang/projects/OpenVPRLab/data/val/msls-val/',
+#         pipeline=test_pipeline),
+#     sampler=dict(type='DefaultSampler', shuffle=False)
+# )
+
 val_dataloader = dict(
     batch_size=256,
     num_workers=16,

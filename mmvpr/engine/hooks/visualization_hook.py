@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import math
 import os.path as osp
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Dict
 
 from mmengine.fileio import join_path
 from mmengine.hooks import Hook
@@ -10,6 +10,12 @@ from mmengine.visualization import Visualizer
 
 from mmvpr.registry import HOOKS
 from mmvpr.structures import DataSample
+
+import random
+import time
+import matplotlib.pyplot as plt
+from PIL import Image
+import numpy as np
 
 
 @HOOKS.register_module()
@@ -124,3 +130,61 @@ class VisualizationHook(Hook):
             outputs (Sequence[:obj:`DetDataSample`]): Outputs from model.
         """
         self._draw_samples(batch_idx, data_batch, outputs, step=0)
+
+def visualization(query_indices, preds, dis, gts, img_paths, num_references):
+    rows = len(query_indices)
+    cols = len(preds[0]) + 1
+
+    fig, axes = plt.subplots(rows, cols, figsize=(cols * 5, rows * 5))
+    fig.suptitle(f'Query Images and top {len(preds[0])} Predicted References', fontsize=16)
+
+    for i, query_index in enumerate(query_indices):
+        query_image = Image.open(img_paths[query_index + num_references])
+        axes[i, 0].imshow(query_image)
+        axes[i, 0].axis('off')
+        # Add text below each image
+        axes[i, 0].text(0.5, -0.1, f'{query_index}', fontsize=12, color='black', ha='center', va='top', transform=axes[i, 0].transAxes)  
+        for j, pred in enumerate(preds[i]):
+            reference_image = Image.open(img_paths[pred])
+            axes[i, j+1].imshow(reference_image)
+            axes[i, j+1].axis('off')
+            similarity_score = 1 / (1 + dis[i, j])
+            if pred in gts[i]:
+                axes[i, j+1].text(0.5, -0.1, f'True: {similarity_score:.3f}', fontsize=12, color='green', ha='center', va='top', transform=axes[i, j+1].transAxes)  
+            else:
+                axes[i, j+1].text(0.5, -0.1, f'False: {similarity_score:.3f}', fontsize=12, color='red', ha='center', va='top', transform=axes[i, j+1].transAxes)  
+    
+    plt.subplots_adjust(hspace=0.5, wspace=0.5)  # Increase the space between rows and columns
+    plt.show()
+
+@HOOKS.register_module()
+class VPRVisualizationHook(Hook):
+    
+    def __init__(self,
+                 num_images = 5,
+                 topk: int = 5):
+        
+        self.topk = topk
+        self.num_images = num_images
+
+    def after_test_epoch(self,
+                        runner,
+                        metrics: Optional[Dict[str, float]] = None) -> None:
+
+        vis_data = runner.test_evaluator.metrics[0].vis_data
+        num_references = vis_data['num_references']
+        num_queries = vis_data['num_queries']
+        predictions = vis_data['predictions']
+        distances = vis_data['distances']
+        assert(num_queries == len(predictions))
+        ground_truth = vis_data['ground_truth']
+        img_paths = vis_data['img_paths']
+
+        random.seed(time.time())
+        query_indices = random.sample(range(0, num_queries), k = self.num_images)
+
+        preds = [predictions[idx][:self.topk] for idx in query_indices]
+        dis = distances[query_indices, :][:, :self.topk]
+        gts = [ground_truth[idx] for idx in query_indices]
+
+        visualization(query_indices, preds, dis, gts, img_paths, num_references)

@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from itertools import product
-from typing import List, Optional, Sequence, Union
+from typing import List, Optional, Sequence, Union, Dict
 
 import mmengine
 import numpy as np
@@ -838,7 +838,8 @@ class VprMetric(BaseMetric):
         img_paths = [res['img_path'] for res in results]
 
         try:
-            acc = self.calculate(descriptors, ground_truth, img_paths, self.topk)
+            results = self.calculate(descriptors, ground_truth, img_paths, self.topk)
+            acc = results['acc']
         except ValueError as e:
             # If the topk is invalid.
             raise ValueError(
@@ -849,6 +850,18 @@ class VprMetric(BaseMetric):
             name = f'recall@{k}'
             metrics[name] = acc[i].item()
 
+        # for visualization
+        vis_data = {
+            'num_references': results['num_references'],
+            'num_queries': results['num_queries'],
+            'predictions': results['predictions'],
+            'distances': results['distances'],
+            'ground_truth': ground_truth,
+            'img_paths': img_paths,
+        }
+
+        self.vis_data = vis_data
+
         return metrics
 
     @staticmethod
@@ -857,7 +870,7 @@ class VprMetric(BaseMetric):
         ground_truth: Union[torch.Tensor, np.ndarray, Sequence],
         img_paths: Union[torch.Tensor, np.ndarray, Sequence],
         topk: Sequence[int] = (1, ),
-    ) -> Union[torch.Tensor, List[List[torch.Tensor]]]:
+    ) -> Union[torch.Tensor, List[List[torch.Tensor]], Dict]:
         """Calculate the accuracy.
 
         Args:
@@ -891,13 +904,23 @@ class VprMetric(BaseMetric):
 
         embed_size = descriptors.shape[1]
         faiss_index = faiss.IndexFlatL2(embed_size)
+        # faiss_index = faiss.IndexFlatIP(embed_size)
+
 
         # add references
         faiss_index.add(descriptors[:num_references])
 
         # search for queries in the index
-        _, predictions = faiss_index.search(descriptors[num_references:], max(topk))
+        distances, predictions = faiss_index.search(descriptors[num_references:], max(topk))
      
+        # normalization distances
+
+        # 计算每一行的 L2 范数
+        row_norms = torch.norm(distances, p=2, dim=1, keepdim=True)
+
+        # 每一行归一化，除以该行的范数
+        distances = distances / row_norms
+
         # start calculating recall_@k
         correct_at_k = np.zeros(len(topk))
         for q_idx, pred in enumerate(predictions):
@@ -908,6 +931,10 @@ class VprMetric(BaseMetric):
         
         correct_at_k = correct_at_k / len(predictions)
 
-        results = [v for v in correct_at_k]
-
+        results = {}
+        results['acc'] = [v for v in correct_at_k]
+        results['predictions'] = predictions
+        results['distances'] = distances
+        results['num_references'] = num_references
+        results['num_queries'] = num_queries
         return results
