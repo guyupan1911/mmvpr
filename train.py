@@ -23,6 +23,7 @@ def parse_args():
         help='If specify checkpoint path, resume from it, while if not '
         'specify, try to auto resume from the latest checkpoint '
         'in the work directory.')
+    parser.add_argument('checkpoint', help='checkpoint file')
     parser.add_argument(
         '--amp',
         action='store_true',

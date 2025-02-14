@@ -20,6 +20,11 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a VPR model')
     parser.add_argument('config', help='train config file path')
     parser.add_argument('--work-dir', help='the dir to save logs and models')
+    parser.add_argument('--test',
+        action='store_true',
+        help='test on test_dataset, If specify checkpoint path, resume from it, while if not '
+            'specify, try to auto resume from the latest checkpoint '
+            'in the work directory.')
     parser.add_argument(
         '--resume',
         nargs='?',
@@ -28,6 +33,7 @@ def parse_args():
         help='If specify checkpoint path, resume from it, while if not '
         'specify, try to auto resume from the latest checkpoint '
         'in the work directory.')
+    parser.add_argument('--checkpoint', help='checkpoint file')
     parser.add_argument(
         '--amp',
         action='store_true',
@@ -103,9 +109,12 @@ def merge_args(cfg, args):
     if args.resume == 'auto':
         cfg.resume = True
         cfg.load_from = None
-    elif args.resume is not None:
+    elif args.resume is not None or args.test:
         cfg.resume = True
-        cfg.load_from = args.resume
+        if args.checkpoint:
+            cfg.load_from = args.load_from
+        else:
+            cfg.load_from = args.resume
 
     # enable auto scale learning rate
     if args.auto_scale_lr:
@@ -186,9 +195,12 @@ def main():
         # if 'runner_type' is set in the cfg
         runner = RUNNERS.build(cfg)
 
-    # start training
-    # runner.train()
-    runner.test()
+    if args.test:
+        # start test
+        runner.test()
+    else:
+        # start training
+        runner.train()
 
 
 
