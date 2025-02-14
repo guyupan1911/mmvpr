@@ -23,6 +23,9 @@ default_hooks = dict(
 
     # reload dataset before each epoch
     reload_dataset=dict(type='ReloadDatasetHook'),
+
+    # train progress_bar hook
+    progress_bar=dict(type='ProgressBarHook')
 )
 
 # configure environment
